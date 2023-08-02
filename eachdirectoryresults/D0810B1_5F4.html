@@ -1,0 +1,265 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>datarunloop</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-07-31"><meta name="DC.source" content="datarunloop.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">% Choose directory</span>
+rootdir = [<span class="string">'D0810B1_5F4/run1'</span>,<span class="string">'D0810B1_5F4/run2'</span>,<span class="string">'D0810B1_5F4/run3'</span>];
+<span class="comment">%Load Data</span>
+
+<span class="keyword">for</span> a=1:16:48
+    DesiredEndEffectorVelocity = load(fullfile(rootdir(a:a+15),<span class="string">"desiredEndEffectorVelocity.csv"</span>));
+    DesiredJointPosition = load(fullfile(rootdir(a:a+15),<span class="string">"desiredJointPosition.csv"</span>));
+    JointPosition = load(fullfile(rootdir(a:a+15),<span class="string">"jointPosition.csv"</span>));
+    Time = load(fullfile(rootdir(a:a+15),<span class="string">"simulationTime.csv"</span>));
+    x = zeros(length(Time),3);
+    xDot = zeros(length(Time)-1,3);
+
+    <span class="keyword">for</span> i =1:length(Time)
+        [x(i,:), ~] = forwardKinematics(JointPosition(i,:));
+    <span class="keyword">end</span>
+    <span class="keyword">for</span> i =1:length(x)-1
+        xDot(i,:) =  (x(i+1,:) - x(i,:)) / (Time(i+1)-Time(i));
+    <span class="keyword">end</span>
+
+    <span class="comment">% Desired Path and Derivative of Path</span>
+    radius = 0.08;
+    line_length = 0.1;
+    alpha = (2*line_length)/(radius*pi) + 1;
+
+    <span class="comment">% Time vector</span>
+    sspace = linspace(0, alpha + 1, length(Time));  <span class="comment">% Generate 100 points within the total time</span>
+
+    P_z = zeros(1,length(sspace));
+    P_x = zeros(1,length(sspace));
+    P_z_derivative = zeros(1,length(sspace));
+    P_x_derivative = zeros(1,length(sspace));
+
+    <span class="keyword">for</span> i=1:length(sspace)
+        s=sspace(i);
+        <span class="keyword">if</span> s &lt;= 1
+            <span class="comment">% Calculate x and y coordinates of the first circle segment</span>
+            P_z(i) = -radius * cos(s*pi/2);
+            P_x(i) = -radius * sin(s*pi/2);
+
+            P_z_derivative(i) = radius * (pi/2) * sin(s * pi/2);
+            P_x_derivative(i) = -radius * (pi/2) * cos(s * pi/2);
+
+        <span class="keyword">elseif</span> s &lt;= alpha &amp;&amp; s&gt;1
+            <span class="comment">% Calculate the coordinates of the straight line segment</span>
+            P_z(i) = (s-1) * (radius * pi) / 2;
+            P_x(i) = -radius * ones(1);
+
+            P_z_derivative(1,i) = radius * pi / 2;
+            P_x_derivative(1,i) = 0;
+        <span class="keyword">else</span>
+            P_z(i) = radius * sin((s-alpha) * pi/2) + line_length;
+            P_x(i) = -radius * cos((s-alpha) * pi/2);
+            P_z_derivative(i) = radius * pi/2 * cos((s-alpha) * pi/2);
+            P_x_derivative(i) = radius * pi/2 * sin((s-alpha) * pi/2);
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+
+    <span class="comment">% Plotting</span>
+    figure(1)
+    hold <span class="string">on</span>;   grid <span class="string">on</span>
+    plot(x(:,3),-x(:,1),<span class="string">'.'</span>)
+    <span class="keyword">if</span> a == 33
+        plot(P_z + 0.515509+radius,P_x + 0.0210774,<span class="string">'LineWidth'</span>,1.5)
+    <span class="keyword">end</span>
+    xlabel(<span class="string">'z direction (m)'</span>);    ylabel(<span class="string">'x direction (m)'</span>)
+    title(<span class="string">'Desired and Actual Position'</span>)
+    legend(<span class="string">'Actual Path1'</span>, <span class="string">'Actual Path2'</span>, <span class="string">'Actual Path3'</span>,<span class="string">'Desired Path'</span> )
+    axis(<span class="string">'equal'</span>);
+
+    figure(2)
+    hold <span class="string">on</span>;    grid <span class="string">on</span>
+    plot(Time(10:end-1),xDot(10:end,1),<span class="string">'.'</span>)
+    <span class="keyword">if</span> a == 33
+        plot(Time,DesiredEndEffectorVelocity(:,1),<span class="string">'LineWidth'</span>,1.5)
+    <span class="keyword">end</span>
+    xlabel(<span class="string">'Time (s)'</span>);    ylabel(<span class="string">'Velocity (m/s)'</span>)
+    title(<span class="string">'Velocity in X direction'</span>)
+    legend(<span class="string">'Actual Velocity1'</span>,<span class="string">'Actual Velocity2'</span>,<span class="string">'Actual Velocity3'</span>,<span class="string">'Desired Velocity'</span>)
+
+    figure(3)
+    hold <span class="string">on</span>;    grid <span class="string">on</span>
+    plot(Time(10:end-1),xDot(10:end,3),<span class="string">'.'</span>)
+    <span class="keyword">if</span> a==33
+        plot(Time,DesiredEndEffectorVelocity(:,3),<span class="string">'LineWidth'</span>,1.5)
+    <span class="keyword">end</span>
+    xlabel(<span class="string">'Time (s)'</span>);    ylabel(<span class="string">'Velocity (m/s)'</span>)
+    title(<span class="string">'Velocity in Z direction'</span>)
+    legend(<span class="string">'Actual Velocity1'</span>,<span class="string">'Actual Velocity2'</span>,<span class="string">'Actual Velocity3'</span>,<span class="string">'Desired velocity'</span>)
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+</pre><img vspace="5" hspace="5" src="datarunloop_01.png" alt=""> <img vspace="5" hspace="5" src="datarunloop_02.png" alt=""> <img vspace="5" hspace="5" src="datarunloop_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+% Choose directory
+rootdir = ['D0810B1_5F4/run1','D0810B1_5F4/run2','D0810B1_5F4/run3'];
+%Load Data
+
+for a=1:16:48
+    DesiredEndEffectorVelocity = load(fullfile(rootdir(a:a+15),"desiredEndEffectorVelocity.csv"));
+    DesiredJointPosition = load(fullfile(rootdir(a:a+15),"desiredJointPosition.csv"));
+    JointPosition = load(fullfile(rootdir(a:a+15),"jointPosition.csv"));
+    Time = load(fullfile(rootdir(a:a+15),"simulationTime.csv"));
+    x = zeros(length(Time),3);
+    xDot = zeros(length(Time)-1,3);
+    
+    for i =1:length(Time)
+        [x(i,:), ~] = forwardKinematics(JointPosition(i,:));
+    end
+    for i =1:length(x)-1
+        xDot(i,:) =  (x(i+1,:) - x(i,:)) / (Time(i+1)-Time(i));
+    end
+    
+    % Desired Path and Derivative of Path
+    radius = 0.08;
+    line_length = 0.1;
+    alpha = (2*line_length)/(radius*pi) + 1;
+    
+    % Time vector
+    sspace = linspace(0, alpha + 1, length(Time));  % Generate 100 points within the total time
+    
+    P_z = zeros(1,length(sspace));
+    P_x = zeros(1,length(sspace));
+    P_z_derivative = zeros(1,length(sspace));
+    P_x_derivative = zeros(1,length(sspace));
+    
+    for i=1:length(sspace)
+        s=sspace(i);
+        if s <= 1
+            % Calculate x and y coordinates of the first circle segment
+            P_z(i) = -radius * cos(s*pi/2);
+            P_x(i) = -radius * sin(s*pi/2);
+            
+            P_z_derivative(i) = radius * (pi/2) * sin(s * pi/2);
+            P_x_derivative(i) = -radius * (pi/2) * cos(s * pi/2);
+            
+        elseif s <= alpha && s>1
+            % Calculate the coordinates of the straight line segment
+            P_z(i) = (s-1) * (radius * pi) / 2;
+            P_x(i) = -radius * ones(1);
+            
+            P_z_derivative(1,i) = radius * pi / 2;
+            P_x_derivative(1,i) = 0;
+        else
+            P_z(i) = radius * sin((s-alpha) * pi/2) + line_length;
+            P_x(i) = -radius * cos((s-alpha) * pi/2);
+            P_z_derivative(i) = radius * pi/2 * cos((s-alpha) * pi/2);
+            P_x_derivative(i) = radius * pi/2 * sin((s-alpha) * pi/2);
+        end
+        
+    end
+    
+    
+    % Plotting
+    figure(1)
+    hold on;   grid on
+    plot(x(:,3),-x(:,1),'.')
+    if a == 33
+        plot(P_z + 0.515509+radius,P_x + 0.0210774,'LineWidth',1.5)
+    end
+    xlabel('z direction (m)');    ylabel('x direction (m)')
+    title('Desired and Actual Position')
+    legend('Actual Path1', 'Actual Path2', 'Actual Path3','Desired Path' )
+    axis('equal');
+    
+    figure(2)
+    hold on;    grid on
+    plot(Time(10:end-1),xDot(10:end,1),'.')
+    if a == 33
+        plot(Time,DesiredEndEffectorVelocity(:,1),'LineWidth',1.5)
+    end
+    xlabel('Time (s)');    ylabel('Velocity (m/s)')
+    title('Velocity in X direction')
+    legend('Actual Velocity1','Actual Velocity2','Actual Velocity3','Desired Velocity')
+    
+    figure(3)
+    hold on;    grid on
+    plot(Time(10:end-1),xDot(10:end,3),'.')
+    if a==33
+        plot(Time,DesiredEndEffectorVelocity(:,3),'LineWidth',1.5)
+    end
+    xlabel('Time (s)');    ylabel('Velocity (m/s)')
+    title('Velocity in Z direction')
+    legend('Actual Velocity1','Actual Velocity2','Actual Velocity3','Desired velocity')
+    
+end
+
+
+##### SOURCE END #####
+--></body></html>
